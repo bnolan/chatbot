@@ -38,23 +38,22 @@ class Net(nn.Module):
 
     def saveWeights(self, model):
         # we will use the PyTorch internal storage functions
-        torch.save(model, "wayneo")
+        torch.save(model, "mary")
         # you can reload model with all the weights and so forth with:
         # torch.load("NN")
+    
 
-
-wayne = torch.load("wayneo")
+wayne = torch.load("mary")
 #print(wayne)
 
+LENGTH = 4
 
-LENGTH = 8
-
-print("You are now chatting with wayne...")
+print("You are now chatting with mary...")
 
 text = ''
 while text != 'quit':
   text = input("> ")  # Python 3
-  inputs = gen_tensor.gen_tensor(text) # 
+  inputs = gen_tensor.encode(text) # 
   X = torch.tensor([inputs], dtype=torch.float)
   # print(X)
 

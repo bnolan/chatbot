@@ -12,46 +12,16 @@ import nltk
 import difflib
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem.porter import *
+import gen_tensor
 
-stemmer = PorterStemmer()
-
-with open("ogen.txt") as f:
-  words = f.readlines()
-words = ' '.join(words)
-words = words.replace(',', ' ')
-words = words.replace('.', ' ')
-words = words.lower()
-
-tokens = nltk.word_tokenize(words)
-singles = [stemmer.stem(t) for t in tokens]
-
-with open("basic.txt") as f:
-  words = f.readlines()
-words = ' '.join(words)
-words = words.replace(',', ' ')
-words = words.replace('.', ' ')
-words = words.lower()
-t2 = nltk.word_tokenize(words)
-s2 = [stemmer.stem(t) for t in t2]
-
-tokens = list(set(singles + s2))
-tokens.sort()
-
-
-NUM_TOKENS = len(tokens)
-print(NUM_TOKENS)
-
-LENGTH = 8
+LENGTH = 4
 inputs = []
 outputs = []
 
+priorInput = False
 
 with open('data_tolokers.json') as f:
   data = json.load(f)
-
-tokenizer = RegexpTokenizer(r'\w+')
-
-priorInput = False
 
 for d in data:
   dialog = d["dialog"]
@@ -63,56 +33,22 @@ for d in data:
     if f["sender_class"] == "Bot":
       continue
     else:
-      # print(f)
-
-      text = f["text"].lower()
-      dialog_tokens = tokenizer.tokenize(text)
-      singles = [stemmer.stem(t) for t in dialog_tokens]
-
-      print(text)
-
-      transcode = []
-
-      for t in singles:
-        matches = difflib.get_close_matches(t, tokens, 3, 0.95)
-        # print(matches)
-
-        if len(matches) > 0:
-          transcode.append(matches[0])
-        else:
-          transcode.append("*")
-    
-      transcoded = ' '.join(transcode)
-      print(' > ' + transcoded)
-
-      tokenIndices = []
+      tokenIndices = gen_tensor.encode(f["text"])
       
-      for t in transcode:
-        # print("x" + t + "x ")
-        try:
-          tokenIndices.append(tokens.index(t) / NUM_TOKENS)
-        except ValueError:
-          tokenIndices.append(0.0)
-      #[tokens.index(t) for t in transcoded]
-
-      tokenIndices = tokenIndices[0:LENGTH]
-      tokenIndices += [0.0] * (LENGTH - len(tokenIndices))
-      print(tokenIndices)
-
       if priorInput:
         inputs.append(priorInput)
         outputs.append(tokenIndices)
       
       priorInput = tokenIndices
 
-
-
+# print(inputs)
+# print(outputs)
 
 input_size = LENGTH
 hidden_size = 300
 num_classes = LENGTH
 num_epochs = 1000
-batch_size = 10
+batch_size = 100
 
 training_data = torch.FloatTensor(inputs)
 training_label = torch.FloatTensor(outputs)
@@ -154,7 +90,7 @@ class Net(nn.Module):
 
     def saveWeights(self, model):
         # we will use the PyTorch internal storage functions
-        torch.save(model, "wayneo")
+        torch.save(model, "mary")
         # you can reload model with all the weights and so forth with:
         # torch.load("NN")
     
@@ -184,7 +120,9 @@ print(X)
 
 #Output
 # y = torch.Tensor([[0],[1],[1]])
-y = torch.tensor(outputs, dtype=torch.long)
+print('wtf')
+print(outputs)
+y = torch.tensor(outputs, dtype=torch.float)
 print(y)
 
 for epoch in range(num_epochs):

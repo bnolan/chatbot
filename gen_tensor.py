@@ -42,17 +42,16 @@ tokens.sort()
 NUM_TOKENS = len(tokens)
 print(NUM_TOKENS)
 
-LENGTH = 8
+LENGTH = 4
 inputs = []
 outputs = []
-
 
 with open('data_tolokers.json') as f:
   data = json.load(f)
 
 tokenizer = RegexpTokenizer(r'\w+')
 
-def gen_tensor(text):
+def encode(text):
   text = text.lower()
   dialog_tokens = tokenizer.tokenize(text)
   singles = [stemmer.stem(t) for t in dialog_tokens]
