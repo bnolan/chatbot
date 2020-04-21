@@ -32,14 +32,24 @@ tokens.sort()
 
 print(len(tokens))
 
+NUM_TOKENS = len(tokens)
+LENGTH = 8
+inputs = []
+outputs = []
+
 
 with open('data_tolokers.json') as f:
   data = json.load(f)
 
 tokenizer = RegexpTokenizer(r'\w+')
 
+priorInput = False
+
 for d in data:
   dialog = d["dialog"]
+
+  if len(inputs) > 50:
+    continue
 
   for f in dialog:
     if f["sender_class"] == "Bot":
@@ -67,13 +77,35 @@ for d in data:
       transcoded = ' '.join(transcode)
       print(' > ' + transcoded)
 
+      tokenIndices = []
+      
+      for t in transcode:
+        # print("x" + t + "x ")
+        try:
+          tokenIndices.append(tokens.index(t) / NUM_TOKENS)
+        except ValueError:
+          tokenIndices.append(0)
+      #[tokens.index(t) for t in transcoded]
 
+      tokenIndices = tokenIndices[0:LENGTH]
+      tokenIndices += [0] * (LENGTH - len(tokenIndices))
+      print(tokenIndices)
+
+      if priorInput:
+        inputs.append(priorInput)
+        outputs.append(tokenIndices)
+      
+      priorInput = tokenIndices
 
 #Input array
-X = torch.Tensor([[0,0,0,0],[0,0,1,1],[1,1,1,1]])
+# X = torch.Tensor([[0,0,0,0],[0,0,1,1],[1,1,1,1]])
+X = torch.Tensor(inputs)
+print(X)
 
 #Output
-y = torch.Tensor([[0],[1],[1]])
+# y = torch.Tensor([[0],[1],[1]])
+y = torch.Tensor(outputs)
+print(y)
 
 #Sigmoid Function
 def sigmoid (x):
@@ -84,11 +116,11 @@ def derivatives_sigmoid(x):
   return x * (1 - x)
 
 #Variable initialization
-epoch=15000 #Setting training iterations
-lr=0.1 #Setting learning rate
-inputlayer_neurons = X.shape[1] #number of features in data set
-hiddenlayer_neurons = 3 #number of hidden layers neurons
-output_neurons = 1 #number of neurons at output layer
+epoch=35000 #Setting training iterations
+lr=0.2 #Setting learning rate
+inputlayer_neurons = LENGTH #number of features in data set
+hiddenlayer_neurons = 1800 #number of hidden layers neurons
+output_neurons = LENGTH #number of neurons at output layer
 
 #weight and bias initialization
 wh=torch.randn(inputlayer_neurons, hiddenlayer_neurons).type(torch.FloatTensor)
@@ -97,7 +129,6 @@ wout=torch.randn(hiddenlayer_neurons, output_neurons)
 bout=torch.randn(1, output_neurons)
 
 for i in range(epoch):
-
   #Forward Propogation
   hidden_layer_input1 = torch.mm(X, wh)
   hidden_layer_input = hidden_layer_input1 + bh
